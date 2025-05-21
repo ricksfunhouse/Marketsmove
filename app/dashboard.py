@@ -9,6 +9,9 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from scripts.indicators import add_moving_averages, add_rsi
 from scripts.news import fetch_market_news
 
+with open("app/style.css") as f:
+    st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
+
 st.set_page_config(layout="wide")
 st.title("World Markets Performance Dashboard")
 
