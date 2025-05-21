@@ -2,6 +2,7 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
+import yfinance as yf
 import time
 from datetime import datetime
 
@@ -12,16 +13,37 @@ st.set_page_config(layout="wide")
 with open("app/style.css") as f:
     st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
 
-# --- HEADER WITH TICKER ---
+# --- HEADER WITH LIVE TICKER MARQUEE ---
 st.markdown("""
 <div style='text-align:center; font-size:30px; color:#ffcc00; text-shadow:0 0 10px #00ffff;'>
   🌐 Trippy Markets Terminal 💫
 </div>
-<div style='text-align:center; font-size:20px; margin-top:-10px;'>
-  <marquee scrollamount="10" direction="left" style="color:#ff69b4;">
-    🧠 BTC 64320 ▲ 2.3% &nbsp;&nbsp;&nbsp; 🎸 ETH 3450 ▼ 1.1% &nbsp;&nbsp;&nbsp; 💎 TSLA 182.5 ▲ 0.7% &nbsp;&nbsp;&nbsp; 📈 SPY 520.9 ▼ 0.3%
-  </marquee>
-</div>
+""", unsafe_allow_html=True)
+
+# --- LIVE MARKET DATA FUNCTION ---
+@st.cache_data(ttl=300)
+def get_live_data(tickers):
+    data = {}
+    for ticker in tickers:
+        info = yf.Ticker(ticker).history(period="1d", interval="1m")
+        if not info.empty:
+            last_close = info["Close"].iloc[-1]
+            prev_close = info["Close"].iloc[-2]
+            pct_change = ((last_close - prev_close) / prev_close) * 100
+            data[ticker] = round(pct_change, 2)
+        else:
+            data[ticker] = 0.0
+    return data
+
+# --- LIVE DATA ---
+tickers = ['BTC-USD', 'ETH-USD', 'SPY', 'QQQ', 'TSLA', 'AAPL', 'GOOG']
+live_data = get_live_data(tickers)
+
+# --- LIVE MARQUEE ---
+st.markdown(f"""
+<marquee scrollamount="10" direction="left" style="color:#39ff14; font-size:18px; font-family:monospace; text-shadow: 0 0 10px #00ffcc;">
+🧠 Live: {' • '.join([f'{t} {live_data[t]}%' for t in tickers])}
+</marquee>
 """, unsafe_allow_html=True)
 
 # --- MUSIC VISUALIZER PLACEHOLDER ---
@@ -32,18 +54,16 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# --- FAKE HEATMAP / TICKER DATA ---
+# --- HEATMAP ---
 st.subheader("Heatmap: Market Movements")
-assets = ['BTC', 'ETH', 'SPY', 'QQQ', 'TSLA', 'AAPL', 'GOOG']
-data = np.random.normal(0, 1, len(assets))
-
-cols = st.columns(len(assets))
+cols = st.columns(len(tickers))
 for i, col in enumerate(cols):
-    change = data[i]
+    ticker = tickers[i]
+    change = live_data[ticker]
     color = '#00ff00' if change > 0 else '#ff0066'
     col.markdown(f"""
         <div style='text-align:center; background:{color}; padding:10px; border-radius:12px;'>
-        <b>{assets[i]}</b><br>{change:+.2f}%
+        <b>{ticker}</b><br>{change:+.2f}%
         </div>
     """, unsafe_allow_html=True)
 
