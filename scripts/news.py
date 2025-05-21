@@ -1,9 +1,10 @@
+import streamlit as st
 import requests
 
 def fetch_market_news():
     try:
         url = "https://newsapi.org/v2/top-headlines?category=business&language=en&pageSize=5"
-        headers = {"Authorization": "Bearer YOUR_NEWSAPI_KEY"}
+        headers = {"Authorization": f"Bearer {st.secrets['NEWS_API_KEY']}"}
         res = requests.get(url, headers=headers)
         data = res.json()
         return [{"title": article["title"], "url": article["url"]} for article in data["articles"]]
