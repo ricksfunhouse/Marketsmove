@@ -1,6 +1,11 @@
 import streamlit as st
 import pandas as pd
 import os
+import sys
+
+# 🔧 Add this block to fix the import path
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
 from scripts.indicators import add_moving_averages, add_rsi
 from scripts.news import fetch_market_news
 
