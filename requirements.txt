@@ -1,0 +1,7 @@
+streamlit
+pandas
+yfinance
+finnhub-python
+python-dotenv
+cryptocompare
+quandl
