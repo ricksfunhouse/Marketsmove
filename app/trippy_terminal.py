@@ -1,76 +1,101 @@
-# --- IMPORTS ---
 import streamlit as st
-import pandas as pd
-import numpy as np
 import yfinance as yf
-import time
-from datetime import datetime
+import plotly.graph_objects as go
+import datetime
+import random
+import requests
 
-# --- PAGE SETUP ---
-st.set_page_config(layout="wide")
+# --------------- PAGE CONFIG ----------------
+st.set_page_config(
+    page_title="Trippy Terminal",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
 
-# Load custom CSS
-with open("app/style.css") as f:
-    st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
-
-# --- HEADER WITH LIVE TICKER MARQUEE ---
+# --------------- CUSTOM STYLES ----------------
 st.markdown("""
-<div style='text-align:center; font-size:30px; color:#ffcc00; text-shadow:0 0 10px #00ffff;'>
-  🌐 Trippy Markets Terminal 💫
-</div>
+    <style>
+    @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500&display=swap');
+
+    html, body, [class*="css"]  {
+        font-family: 'Orbitron', monospace;
+        background: url('https://media.giphy.com/media/3oKIPwoeGErMmaI43C/giphy.gif');
+        background-size: cover;
+        color: #00ffcc;
+    }
+
+    .ticker {
+        animation: wave 3s infinite;
+        font-size: 24px;
+        color: #ff00ff;
+        padding: 10px;
+    }
+
+    @keyframes wave {
+        0% { transform: translateX(0px); }
+        50% { transform: translateX(10px); }
+        100% { transform: translateX(0px); }
+    }
+    </style>
 """, unsafe_allow_html=True)
 
-# --- LIVE MARKET DATA FUNCTION ---
-@st.cache_data(ttl=300)
-def get_live_data(tickers):
-    data = {}
-    for ticker in tickers:
-        info = yf.Ticker(ticker).history(period="1d", interval="1m")
-        if not info.empty:
-            last_close = info["Close"].iloc[-1]
-            prev_close = info["Close"].iloc[-2]
-            pct_change = ((last_close - prev_close) / prev_close) * 100
-            data[ticker] = round(pct_change, 2)
-        else:
-            data[ticker] = 0.0
-    return data
+# --------------- SIDEBAR ----------------
+st.sidebar.header("Trippy Terminal")
+ticker = st.sidebar.text_input("Enter Stock Ticker", value="AAPL")
 
-# --- LIVE DATA ---
-tickers = ['BTC-USD', 'ETH-USD', 'SPY', 'QQQ', 'TSLA', 'AAPL', 'GOOG']
-live_data = get_live_data(tickers)
+# --------------- LIVE TICKER ----------------
+def show_ticker(ticker):
+    stock = yf.Ticker(ticker)
+    todays_data = stock.history(period='1d')
+    price = todays_data['Close'].iloc[-1] if not todays_data.empty else 0
+    st.markdown(f'<div class="ticker">${ticker.upper()} - ${price:.2f}</div>', unsafe_allow_html=True)
 
-# --- LIVE MARQUEE ---
-st.markdown(f"""
-<marquee scrollamount="10" direction="left" style="color:#39ff14; font-size:18px; font-family:monospace; text-shadow: 0 0 10px #00ffcc;">
-🧠 Live: {' • '.join([f'{t} {live_data[t]}%' for t in tickers])}
-</marquee>
-""", unsafe_allow_html=True)
+# --------------- CHART PANEL ----------------
+def plot_chart(ticker):
+    data = yf.download(ticker, period="1mo", interval="1h")
+    fig = go.Figure()
+    fig.add_trace(go.Candlestick(
+        x=data.index,
+        open=data['Open'],
+        high=data['High'],
+        low=data['Low'],
+        close=data['Close'],
+        name='Market Data'))
 
-# --- MUSIC VISUALIZER PLACEHOLDER ---
-st.markdown("""
-<div style='text-align:center; margin:20px;'>
-  <img src='https://media.giphy.com/media/xT9IgzoKnwFNmISR8I/giphy.gif' width='200'/>
-  <p style='color:#ccc;'>Live Vibe Visualizer (connect to the jam 🌀)</p>
-</div>
-""", unsafe_allow_html=True)
+    fig.update_layout(
+        plot_bgcolor='black',
+        paper_bgcolor='black',
+        font=dict(color='lime'),
+        xaxis_rangeslider_visible=False,
+        title=f"{ticker.upper()} - Last Month"
+    )
+    st.plotly_chart(fig, use_container_width=True)
 
-# --- HEATMAP ---
-st.subheader("Heatmap: Market Movements")
-cols = st.columns(len(tickers))
-for i, col in enumerate(cols):
-    ticker = tickers[i]
-    change = live_data[ticker]
-    color = '#00ff00' if change > 0 else '#ff0066'
-    col.markdown(f"""
-        <div style='text-align:center; background:{color}; padding:10px; border-radius:12px;'>
-        <b>{ticker}</b><br>{change:+.2f}%
-        </div>
-    """, unsafe_allow_html=True)
+# --------------- FAKE SENTIMENT ANALYZER ----------------
+def fake_sentiment():
+    sentiment = random.choice(["bullish", "bearish", "trippy"])
+    colors = {"bullish": "green", "bearish": "red", "trippy": "purple"}
+    st.markdown(f'<h3 style="color:{colors[sentiment]}">Market Sentiment: {sentiment}</h3>', unsafe_allow_html=True)
 
-# --- FOOTER ---
-st.markdown("""
-<hr style="border-top: 1px solid #ccc;"/>
-<div style='text-align:center; font-size:12px; color:#888;'>
-  Made with 💜 in the Market Matrix.
-</div>
-""", unsafe_allow_html=True)
+# --------------- MEME OR CRYSTAL BALL ----------------
+def meme_or_fortune():
+    if random.random() > 0.5:
+        st.image("https://i.imgur.com/Bz3fQTI.jpeg", caption="Meme of the Day")
+    else:
+        st.markdown(f'<h4 style="color:#cc00ff">🔮 Your fortune: {random.choice(["Buy the dip", "Sell the news", "HODL like a wizard", "Rebalance your karma"])}</h4>', unsafe_allow_html=True)
+
+# --------------- MUSHROOM CLOCK ----------------
+def mushroom_clock():
+    ny_time = datetime.datetime.utcnow() - datetime.timedelta(hours=4)
+    st.markdown(f'<h4 style="color:#ffcc00">🍄 Market Time (NY): {ny_time.strftime("%H:%M:%S")}</h4>', unsafe_allow_html=True)
+
+# --------------- MAIN DISPLAY ----------------
+st.title("🌈 Trippy Terminal")
+show_ticker(ticker)
+plot_chart(ticker)
+fake_sentiment()
+mushroom_clock()
+meme_or_fortune()
+
+st.markdown("---")
+st.markdown("**Trip Mode, Audio Visuals & Mood Rings Coming Soon...** 🎧💫")
